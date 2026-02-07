@@ -1,19 +1,19 @@
 // ============================================
-// NowShare - Professional Header
+// NowShare - BeReal Style Header (Bottom Navigation)
 // ============================================
 
 import React, { useState } from 'react';
 import { 
-  AppBar, Toolbar, Typography, Button, Box, IconButton, 
-  Avatar, Badge, Menu, MenuItem, Divider, useTheme, useMediaQuery,
-  Drawer, List, ListItem, ListItemIcon, ListItemText
+  Box, AppBar, Toolbar, Typography, IconButton, 
+  BottomNavigation, BottomNavigationAction, Badge, Avatar,
+  Drawer, List, ListItem, ListItemIcon, ListItemText, Divider,
+  useTheme, useMediaQuery
 } from '@mui/material';
 import { 
-  Home, AddAPhoto, Person, Notifications, Search, 
-  Logout, Settings, Menu as MenuIcon, DarkMode, LightMode
+  Home, AddAPhoto, Person, Notifications, Search,
+  Menu, Close, Settings, Logout, CameraAlt
 } from '@mui/icons-material';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
 
 const Header = ({ user, onLogout }) => {
   const theme = useTheme();
@@ -21,248 +21,359 @@ const Header = ({ user, onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [navValue, setNavValue] = useState(getNavValue(location.pathname));
 
-  const handleMenu = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
+  // パスからナビゲーション値を計算
+  function getNavValue(path) {
+    if (path === '/') return 0;
+    if (path === '/search') return 1;
+    if (path === '/notifications') return 2;
+    if (path.startsWith('/profile')) return 3;
+    return 0;
+  }
 
-  const handleClose = () => {
-    setAnchorEl(null);
+  const handleNavChange = (event, newValue) => {
+    setNavValue(newValue);
+    const paths = ['/', '/search', '/notifications', '/profile'];
+    if (newValue < paths.length) {
+      navigate(paths[newValue]);
+    }
   };
 
   const handleLogout = () => {
-    handleClose();
+    setDrawerOpen(false);
     onLogout();
     navigate('/login');
   };
 
   const navItems = [
-    { path: '/', label: 'タイムライン', icon: <Home /> },
-    { path: '/post', label: '投稿', icon: <AddAPhoto /> },
-    { path: '/notifications', label: '通知', icon: <Notifications /> },
-    { path: '/search', label: '検索', icon: <Search /> },
+    { label: 'ホーム', icon: <Home />, path: '/' },
+    { label: '検索', icon: <Search />, path: '/search' },
+    { label: '', icon: <CameraAlt />, path: '/post', isCamera: true },
+    { label: '通知', icon: <Notifications />, path: '/notifications' },
+    { label: 'プロフィール', icon: <Person />, path: '/profile' },
   ];
 
-  const drawer = (
-    <Box sx={{ width: 280, pt: 2 }}>
-      <Box sx={{ px: 2, pb: 2, borderBottom: '1px solid #eee' }}>
-        <Typography variant="h6" fontWeight="bold" color="primary">
-          📸 NowShare
-        </Typography>
-        {user && (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            ようこそ、{user.displayName || 'ユーザー'}さん
-          </Typography>
-        )}
-      </Box>
-      <List>
-        {navItems.map((item) => (
-          <ListItem 
-            button 
-            key={item.path}
-            component={Link} 
-            to={item.path}
-            onClick={() => setMobileOpen(false)}
-            sx={{ 
-              mx: 1, 
-              borderRadius: 2,
-              mb: 0.5,
-              bgcolor: location.pathname === item.path ? 'primary.light' : 'transparent',
-              color: location.pathname === item.path ? 'primary.contrastText' : 'text.primary',
-              '&:hover': {
-                bgcolor: location.pathname === item.path ? 'primary.main' : 'action.hover',
+  return (
+    <>
+      {/* 最小限の上部バー（モバイルのみ） */}
+      {isMobile && (
+        <AppBar 
+          position="fixed" 
+          color="inherit"
+          sx={{ 
+            top: 0, 
+            bottom: 'auto',
+            zIndex: 1100,
+          }}
+        >
+          <Toolbar sx={{ justifyContent: 'space-between', minHeight: 56 }}>
+            <Typography 
+              variant="h6" 
+              component={Link} 
+              to="/"
+              sx={{ 
+                textDecoration: 'none',
+                color: '#000000',
+                fontWeight: 700,
+                fontSize: '1.2rem',
+                letterSpacing: '-0.03em',
+              }}
+            >
+              NowShare
+            </Typography>
+            
+            {!user && (
+              <IconButton component={Link} to="/login">
+                <Person />
+              </IconButton>
+            )}
+            
+            {user && (
+              <IconButton onClick={() => setDrawerOpen(true)}>
+                <Avatar 
+                  src={user.photoURL}
+                  sx={{ width: 28, height: 28, bgcolor: '#000000' }}
+                >
+                  {user.displayName?.[0] || '?'}
+                </Avatar>
+              </IconButton>
+            )}
+          </Toolbar>
+        </AppBar>
+      )}
+
+      {/* 桌面顶部栏 */}
+      {!isMobile && (
+        <AppBar 
+          position="fixed" 
+          color="inherit"
+          sx={{ 
+            top: 0, 
+            zIndex: 1100,
+          }}
+        >
+          <Toolbar sx={{ justifyContent: 'space-between', maxWidth: 600, mx: 'auto', width: '100%' }}>
+            <Typography 
+              variant="h6" 
+              component={Link} 
+              to="/"
+              sx={{ 
+                textDecoration: 'none',
+                color: '#000000',
+                fontWeight: 700,
+                fontSize: '1.3rem',
+                letterSpacing: '-0.03em',
+              }}
+            >
+              NowShare
+            </Typography>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {user ? (
+                <>
+                  <IconButton component={Link} to="/search">
+                    <Search />
+                  </IconButton>
+                  <IconButton component={Link} to="/notifications">
+                    <Badge badgeContent={3} color="error">
+                      <Notifications />
+                    </Badge>
+                  </IconButton>
+                  <IconButton onClick={() => setDrawerOpen(true)}>
+                    <Avatar 
+                      src={user.photoURL}
+                      sx={{ width: 32, height: 32, bgcolor: '#000000' }}
+                    >
+                      {user.displayName?.[0] || '?'}
+                    </Avatar>
+                  </IconButton>
+                </>
+              ) : (
+                <IconButton component={Link} to="/login">
+                  <Person />
+                </IconButton>
+              )}
+            </Box>
+          </Toolbar>
+        </AppBar>
+      )}
+
+      {/* 下部ナビゲーション（モバイル） */}
+      {isMobile && (
+        <BottomNavigation
+          value={navValue}
+          onChange={handleNavChange}
+          showLabels={false}
+          sx={{ 
+            position: 'fixed', 
+            bottom: 0, 
+            left: 0, 
+            right: 0,
+            zIndex: 1100,
+            '& .MuiBottomNavigationAction-root': {
+              minWidth: 0,
+              padding: '6px 0',
+            },
+          }}
+        >
+          {navItems.map((item, index) => (
+            <BottomNavigationAction
+              key={item.path}
+              icon={
+                item.isCamera ? (
+                  <Box
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: '50%',
+                      bgcolor: '#000000',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#FFFFFF',
+                      border: '3px solid #FFFFFF',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+                      transform: 'translateY(-20%)',
+                    }}
+                  >
+                    {item.icon}
+                  </Box>
+                ) : (
+                  item.icon
+                )
               }
+              label={item.label}
+              sx={{
+                color: navValue === index ? '#000000' : '#666666',
+                '& .MuiSvgIcon-root': {
+                  fontSize: navValue === index ? 28 : 24,
+                },
+              }}
+            />
+          ))}
+        </BottomNavigation>
+      )}
+
+      {/* 桌面底部导航 */}
+      {!isMobile && (
+        <Box
+          sx={{
+            position: 'fixed',
+            bottom: 24,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            bgcolor: '#FFFFFF',
+            borderRadius: 3,
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #E0E0E0',
+            zIndex: 1100,
+          }}
+        >
+          <BottomNavigation
+            value={navValue}
+            onChange={handleNavChange}
+            showLabels={true}
+            sx={{ 
+              minWidth: 400,
+              '& .MuiBottomNavigationAction-root': {
+                minWidth: 60,
+                padding: '8px 16px',
+              },
             }}
           >
-            <ListItemIcon sx={{ 
-              color: location.pathname === item.path ? 'primary.contrastText' : 'primary.main' 
-            }}>
-              {item.icon}
-            </ListItemIcon>
-            <ListItemText primary={item.label} />
-          </ListItem>
-        ))}
-      </List>
-      <Divider sx={{ my: 2 }} />
-      {user && (
+            <BottomNavigationAction 
+              label="ホーム" 
+              icon={<Home />} 
+              sx={{ color: navValue === 0 ? '#000000' : '#666666' }}
+            />
+            <BottomNavigationAction 
+              label="検索" 
+              icon={<Search />} 
+              sx={{ color: navValue === 1 ? '#000000' : '#666666' }}
+            />
+            <BottomNavigationAction 
+              icon={
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '50%',
+                    bgcolor: '#000000',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#FFFFFF',
+                  }}
+                >
+                  <CameraAlt sx={{ fontSize: 24 }} />
+                </Box>
+              }
+              sx={{ 
+                color: navValue === 2 ? '#000000' : '#666666',
+                '& .MuiBottomNavigationAction-wrapper': {
+                  transform: navValue === 2 ? 'translateY(-8px)' : 'none',
+                },
+              }}
+            />
+            <BottomNavigationAction 
+              label="通知" 
+              icon={<Notifications />} 
+              sx={{ color: navValue === 3 ? '#000000' : '#666666' }}
+            />
+            <BottomNavigationAction 
+              label="プロフィール" 
+              icon={<Person />} 
+              sx={{ color: navValue === 4 ? '#000000' : '#666666' }}
+            />
+          </BottomNavigation>
+        </Box>
+      )}
+
+      {/* メニューDrawer */}
+      <Drawer
+        anchor="right"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        PaperProps={{
+          sx: { width: 300 }
+        }}
+      >
+        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" fontWeight="bold">
+            メニュー
+          </Typography>
+          <IconButton onClick={() => setDrawerOpen(false)}>
+            <Close />
+          </IconButton>
+        </Box>
+        
+        <Divider />
+        
+        {user && (
+          <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar 
+              src={user.photoURL}
+              sx={{ width: 48, height: 48, bgcolor: '#000000' }}
+            >
+              {user.displayName?.[0] || '?'}
+            </Avatar>
+            <Box>
+              <Typography variant="subtitle1" fontWeight="600">
+                {user.displayName || 'ユーザー'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                @{user.username || 'username'}
+              </Typography>
+            </Box>
+          </Box>
+        )}
+        
+        <Divider />
+        
         <List>
           <ListItem 
             button 
             component={Link} 
-            to={`/profile/${user.uid}`}
-            onClick={() => setMobileOpen(false)}
-            sx={{ mx: 1, borderRadius: 2 }}
+            to="/profile"
+            onClick={() => setDrawerOpen(false)}
           >
             <ListItemIcon><Person /></ListItemIcon>
             <ListItemText primary="プロフィール" />
           </ListItem>
           <ListItem 
             button 
-            onClick={handleLogout}
-            sx={{ mx: 1, borderRadius: 2, color: 'error.main' }}
+            component={Link} 
+            to="/notifications"
+            onClick={() => setDrawerOpen(false)}
           >
-            <ListItemIcon><Logout color="error" /></ListItemIcon>
+            <ListItemIcon><Notifications /></ListItemIcon>
+            <ListItemText primary="通知" />
+          </ListItem>
+          <ListItem 
+            button 
+            component={Link} 
+            to="/search"
+            onClick={() => setDrawerOpen(false)}
+          >
+            <ListItemIcon><Search /></ListItemIcon>
+            <ListItemText primary="検索" />
+          </ListItem>
+        </List>
+        
+        <Divider />
+        
+        <List>
+          <ListItem button>
+            <ListItemIcon><Settings /></ListItemIcon>
+            <ListItemText primary="設定" />
+          </ListItem>
+          <ListItem button onClick={handleLogout} sx={{ color: '#FF6B6B' }}>
+            <ListItemIcon><Logout sx={{ color: '#FF6B6B' }} /></ListItemIcon>
             <ListItemText primary="ログアウト" />
           </ListItem>
         </List>
-      )}
-    </Box>
-  );
-
-  return (
-    <>
-      <AppBar 
-        position="sticky" 
-        color="inherit"
-        sx={{ 
-          backdropFilter: 'blur(20px)',
-          bgcolor: 'rgba(255, 255, 255, 0.9)',
-          borderBottom: '1px solid rgba(0,0,0,0.05)',
-        }}
-      >
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          {/* Logo */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {isMobile && (
-              <IconButton
-                edge="start"
-                color="inherit"
-                onClick={() => setMobileOpen(true)}
-              >
-                <MenuIcon />
-              </IconButton>
-            )}
-            <Typography 
-              variant="h5" 
-              component={Link} 
-              to="/"
-              sx={{ 
-                textDecoration: 'none',
-                color: 'primary.main',
-                fontWeight: 800,
-                background: 'linear-gradient(135deg, #6366F1 0%, #EC4899 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                letterSpacing: '-0.5px',
-              }}
-            >
-              NowShare
-            </Typography>
-          </Box>
-
-          {/* Desktop Navigation */}
-          {!isMobile && (
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              {navItems.map((item) => (
-                <motion.div key={item.path} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button
-                    component={Link}
-                    to={item.path}
-                    startIcon={item.icon}
-                    sx={{
-                      color: location.pathname === item.path ? 'primary.main' : 'text.secondary',
-                      bgcolor: location.pathname === item.path ? 'primary.light' : 'transparent',
-                      px: 2,
-                      py: 1,
-                      '&:hover': {
-                        bgcolor: 'primary.light',
-                        color: 'white',
-                      },
-                    }}
-                  >
-                    {item.label}
-                  </Button>
-                </motion.div>
-              ))}
-            </Box>
-          )}
-
-          {/* User Menu / Login Button */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {user ? (
-              <>
-                <IconButton color="inherit" component={Link} to="/profile">
-                  <Badge
-                    overlap="circular"
-                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                    badgeContent={
-                      <Box
-                        sx={{
-                          width: 14,
-                          height: 14,
-                          bgcolor: 'success.main',
-                          borderRadius: '50%',
-                          border: '2px solid white',
-                        }}
-                      />
-                    }
-                  >
-                    <Avatar
-                      src={user.photoURL}
-                      sx={{ width: 36, height: 36, bgcolor: 'primary.main' }}
-                    >
-                      {user.displayName?.[0] || '?'}
-                    </Avatar>
-                  </Badge>
-                </IconButton>
-                <IconButton onClick={handleMenu}>
-                  <Settings />
-                </IconButton>
-                <Menu
-                  anchorEl={anchorEl}
-                  open={Boolean(anchorEl)}
-                  onClose={handleClose}
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                  PaperProps={{
-                    sx: { width: 220, mt: 1, borderRadius: 3 }
-                  }}
-                >
-                  <MenuItem component={Link} to={`/profile/${user.uid}`} onClick={handleClose}>
-                    <ListItemIcon><Person fontSize="small" /></ListItemIcon>
-                    プロフィール
-                  </MenuItem>
-                  <MenuItem onClick={handleClose}>
-                    <ListItemIcon><Settings fontSize="small" /></ListItemIcon>
-                    設定
-                  </MenuItem>
-                  <Divider />
-                  <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
-                    <ListItemIcon><Logout fontSize="small" color="error" /></ListItemIcon>
-                    ログアウト
-                  </MenuItem>
-                </Menu>
-              </>
-            ) : (
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  component={Link}
-                  to="/login"
-                  variant="contained"
-                  sx={{
-                    background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
-                    borderRadius: 20,
-                    px: 3,
-                  }}
-                >
-                  ログイン
-                </Button>
-              </motion.div>
-            )}
-          </Box>
-        </Toolbar>
-      </AppBar>
-
-      {/* Mobile Drawer */}
-      <Drawer
-        anchor="left"
-        open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        PaperProps={{ sx: { width: 280 } }}
-      >
-        {drawer}
       </Drawer>
     </>
   );
